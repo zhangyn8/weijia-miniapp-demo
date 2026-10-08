@@ -34,7 +34,7 @@ import {
 } from "lucide-react";
 
 type Tab = "home" | "space" | "messages" | "me";
-type Detail = "task" | "event" | "device" | "house" | null;
+type Detail = "task" | "event" | "device" | "house" | "family" | "members" | "privacy" | "notifications" | null;
 type Scenario = "comfort" | "leave" | "gas" | "qa" | "light";
 type PrivacyMode = "standard" | "mute" | "privacy";
 const privacyModeNames: Record<PrivacyMode, string> = {
@@ -90,8 +90,8 @@ type PrototypeCase = {
   tone?: "warning" | "danger";
 };
 const prototypeCases: PrototypeCase[] = [
-  { id: "first-visit", page: "home", name: "首访 · 未绑定家庭", title: "先关联你的家", body: "关联家庭后，才能看到真实空间、设备和任务。绑定前不展示模拟家庭状态，也不提供控制操作。", rows: [{ label: "当前状态", value: "尚未绑定家庭" }, { label: "授权方式", value: "按需授权" }], action: "绑定家庭" },
-  { id: "no-history", page: "home", name: "首访 · 已绑定无历史", title: "你好，小南", body: "家庭已关联。这里会先展示当前空间摘要和少量示例问题；首次提问时再申请相关能力的授权。", rows: [{ label: "家庭", value: "未来之家" }, { label: "历史任务", value: "暂无" }], action: "进入对话首页" },
+  { id: "first-visit", page: "home", name: "首访 · 未绑定家庭", title: "先关联你的家", body: "关联家庭后，才能看到真实空间、设备和任务。绑定前不会显示家庭状态，也不能控制设备。", rows: [{ label: "当前状态", value: "尚未绑定家庭" }, { label: "授权方式", value: "按需授权" }], action: "绑定家庭" },
+  { id: "no-history", page: "home", name: "首访 · 已绑定无历史", title: "你好，小南", body: "家庭已关联。这里会先展示当前空间摘要和几个常见问题；首次提问时再申请相关能力的授权。", rows: [{ label: "家庭", value: "未来之家" }, { label: "历史任务", value: "暂无" }], action: "进入对话首页" },
   { id: "history", page: "home", name: "历史会话 · 待确认任务", title: "继续上次的任务", body: "离家模式已完成影响范围预览，等待你确认。恢复时沿用原会话和任务编号，不会重复下发已完成动作。", rows: [{ label: "原任务", value: "离家模式" }, { label: "任务编号", value: "T-1028" }, { label: "当前步骤", value: "等待确认" }], action: "继续任务" },
   { id: "loading", page: "home", name: "通用 · 加载中", title: "正在更新家庭状态", body: "保留页面与当前家庭上下文。较长时间未返回时，说明正在等待哪个服务。", rows: [{ label: "正在读取", value: "空间与任务" }, { label: "当前结果", value: "尚未确认" }], action: "返回页面" },
   { id: "offline", page: "space", name: "空间 · 设备离线", title: "客厅设备暂时离线", body: "手机网络正常，但客厅主灯和空调没有最新回报。页面保留最后一次记录，不允许以旧状态发起确定性控制。", rows: [{ label: "最后上报", value: "10 分钟前" }, { label: "当前状态", value: "无法确认" }], action: "查看设备", tone: "warning" },
@@ -100,7 +100,7 @@ const prototypeCases: PrototypeCase[] = [
   { id: "stale", page: "space", name: "空间 · 数据过期", title: "环境数据已过期", body: "温度和 CO₂ 读数来自较早的上报，暂不能据此判断客厅是否舒适或自动建议控制。", rows: [{ label: "温度", value: "29.2°C · 历史值" }, { label: "采集时间", value: "20 分钟前" }], action: "重新获取", tone: "warning" },
   { id: "space-empty", page: "space", name: "空间 · 空房间", title: "这个房间还没有设备", body: "已选择厨房，但尚未接入可显示的设备。可以返回全屋或前往家庭设置完成设备配置。", rows: [{ label: "空间", value: "厨房" }, { label: "设备", value: "0 台" }], action: "返回全屋" },
   { id: "sensor-missing", page: "space", name: "空间 · 传感器缺失", title: "暂缺环境读数", body: "卧室尚未接入温度与空气质量传感器。不要使用其他房间的数据代替。", rows: [{ label: "温度", value: "暂无数据" }, { label: "CO₂", value: "暂无数据" }], action: "查看设备配置" },
-  { id: "message-empty", page: "messages", name: "消息 · 空列表", title: "暂时没有消息", body: "告警、任务结果和通知会出现在这里。你可以返回对话页发起一次演示任务。", action: "返回对话" },
+  { id: "message-empty", page: "messages", name: "消息 · 空列表", title: "暂时没有消息", body: "告警、任务结果和通知会出现在这里。你可以返回对话页发起一次设备任务。", action: "返回对话" },
   { id: "message-unread", page: "messages", name: "消息 · 未读与待处理", title: "有一条待处理告警", body: "未读只表示尚未打开；确认收到也不代表险情解除。打开消息时应刷新事件最新状态。", rows: [{ label: "厨房燃气报警", value: "待处理" }, { label: "读取状态", value: "未读" }], action: "查看事件", tone: "danger" },
   { id: "message-expired", page: "messages", name: "消息 · 历史链接失效", title: "这条消息已失效", body: "原消息的操作入口已过期。先获取当前事件或任务状态，再决定是否展示后续操作。", rows: [{ label: "原消息", value: "离家模式结果" }, { label: "当前状态", value: "需重新获取" }], action: "刷新当前状态", tone: "warning" },
   { id: "permission", page: "messages", name: "消息 · 无权限", title: "无法查看这条消息", body: "你的家庭访问权限已变化。敏感摘要保持隐藏，如需继续查看请联系家庭管理员。", rows: [{ label: "访问对象", value: "已脱敏" }, { label: "处理方式", value: "联系管理员" }], action: "返回消息" },
@@ -119,7 +119,7 @@ const prototypeCases: PrototypeCase[] = [
   { id: "device-unsupported", page: "device", name: "设备 · 不支持控制", title: "当前设备暂不支持远程控制", body: "设备状态可查看，但能力目录未返回可用控制项。页面不展示无法履约的操作按钮。", rows: [{ label: "设备", value: "窗帘电机" }, { label: "在线状态", value: "已连接" }, { label: "远程控制", value: "待验证" }], action: "查看设备资料" },
   { id: "device-fault", page: "device", name: "设备 · 故障", title: "设备状态异常", body: "客厅空调上报故障码，暂不提供继续控制。可查看最近回报与故障说明，并联系维护人员。", rows: [{ label: "设备", value: "客厅空调" }, { label: "故障", value: "需检修" }], action: "查看故障详情", tone: "warning" },
   { id: "device-permission", page: "device", name: "设备 · 无控制权限", title: "你没有控制权限", body: "设备状态按授权范围可见，但当前成员不能发起控制。申请权限后需重新校验，不沿用旧页面授权。", rows: [{ label: "设备", value: "客厅空调" }, { label: "控制权限", value: "未授权" }], action: "查看权限说明" },
-  { id: "house-missing", page: "house", name: "资料 · 缺失", title: "尚未录入保修凭证", body: "已有型号和安装位置，但保修日期缺少可靠来源。回答中应标明缺口，不推测保修时间。", rows: [{ label: "型号", value: "示例型号 KFR-35" }, { label: "保修凭证", value: "未录入" }], action: "查看补录说明" },
+  { id: "house-missing", page: "house", name: "资料 · 缺失", title: "尚未录入保修凭证", body: "已有型号和安装位置，但保修日期缺少可靠来源。回答中应标明缺口，不推测保修时间。", rows: [{ label: "型号", value: "KFR-35" }, { label: "保修凭证", value: "未录入" }], action: "查看补录说明" },
   { id: "house-conflict", page: "house", name: "资料 · 来源冲突", title: "资料需要核对", body: "设备铭牌与上传凭证的型号不一致。在有权人核对前，不将其中一项作为确定答案。", rows: [{ label: "设备铭牌", value: "KFR-35" }, { label: "上传凭证", value: "KFR-36" }], action: "查看来源", tone: "warning" },
   { id: "house-unavailable", page: "house", name: "资料 · 来源不可用", title: "资料暂时无法获取", body: "设备档案服务未返回可靠结果。保留当前问题与已确认资料，恢复后继续查询，不编造型号或保修日期。", rows: [{ label: "资料来源", value: "暂时不可用" }, { label: "回答状态", value: "等待核验" }], action: "稍后重试", tone: "warning" },
   { id: "house-permission", page: "house", name: "资料 · 无权限", title: "无法查看这份资料", body: "当前成员没有访问这份家庭凭证的权限。页面只显示可公开的设备摘要，敏感文件内容保持隐藏。", rows: [{ label: "凭证内容", value: "已隐藏" }, { label: "下一步", value: "联系家庭管理员" }], action: "返回资料" },
@@ -251,7 +251,7 @@ function ChatCard({
         <span className="light-success-icon" aria-hidden="true"><CircleCheck size={20} /></span>
         <span className="light-success-copy">
           <strong>客厅灯已打开</strong>
-          <small>模拟设备回读 · 刚刚</small>
+          <small>设备状态 · 刚刚更新</small>
         </span>
         <button onClick={() => onAction("task_detail", item.id)} aria-label="查看任务详情">
           详情 <ChevronRight size={15} />
@@ -278,7 +278,7 @@ function ChatCard({
         <span className={`card-icon ${item.kind}`}>{glyph[item.kind]}</span>
         <span className="card-kicker">
           {item.kind === "safety"
-            ? "安全事件 · 演示"
+            ? "安全事件"
             : item.kind === "answer"
               ? "家庭问答"
               : "维家助手"}
@@ -329,7 +329,7 @@ export default function App() {
   const initialPrototype = prototypeCases.find((entry) => entry.id === new URLSearchParams(window.location.search).get("prototype"));
   const [tab, setTab] = useState<Tab>(initialPrototype && ["home", "space", "messages", "me"].includes(initialPrototype.page) ? initialPrototype.page as Tab : "home");
   const [currentTime, setCurrentTime] = useState(() => new Date());
-  const [detail, setDetail] = useState<Detail>(initialPrototype && ["task", "event", "device", "house"].includes(initialPrototype.page) ? initialPrototype.page as Detail : null);
+  const [detail, setDetail] = useState<Detail>(initialPrototype && ["task", "event", "device", "house", "family", "members", "privacy", "notifications"].includes(initialPrototype.page) ? initialPrototype.page as Detail : null);
   const [items, setItems] = useState<ChatItem[]>(() => {
     try {
       const saved = JSON.parse(sessionStorage.getItem("weijia-demo-items") || "[]");
@@ -353,6 +353,8 @@ export default function App() {
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
   const [modeOpen, setModeOpen] = useState(false);
+  const [ordinaryNotices, setOrdinaryNotices] = useState(true);
+  const [quietHours, setQuietHours] = useState(false);
   const [privacyMode, setPrivacyMode] = useState<PrivacyMode>(() => {
     const stored = sessionStorage.getItem("weijia-demo-privacy-mode");
     return stored === "mute" || stored === "privacy" ? stored : "standard";
@@ -388,7 +390,7 @@ export default function App() {
   function openPrototype(id: string) {
     const selected = prototypeCases.find((entry) => entry.id === id);
     if (!selected) return;
-    if (["task", "event", "device", "house"].includes(selected.page)) {
+    if (["task", "event", "device", "house", "family", "members", "privacy", "notifications"].includes(selected.page)) {
       setDetail(selected.page as Exclude<Detail, null>);
     } else {
       setDetail(null);
@@ -572,7 +574,7 @@ export default function App() {
                     ? offline
                       ? "客厅设备离线未执行，卧室灯无响应。请查看分项结果，不会把本次任务显示为成功。"
                       : "卧室灯未响应，其余动作已有回读。请查看失败项，不会把本次任务显示为全部成功。"
-                    : "已收到模拟设备回读，下方为设备当前状态。",
+                    : "设备状态已更新，可在下方查看。",
                 badge: status,
                 rows,
                 actions: [
@@ -590,14 +592,14 @@ export default function App() {
     setDetail(null);
     setDemoOpen(false);
     if (privacyMode === "privacy" && type !== "gas") {
-      showInfo("隐私模式下对话已暂停", "非安全类云端会话和主动个性化已暂停。你仍可查看空间和消息；如需继续对话，可从“我的”切回标准或静音模式。安全事件演示仍可触发。");
+      showInfo("隐私模式下对话已暂停", "非安全类云端会话和主动个性化已暂停。你仍可查看空间和消息；如需继续对话，可从“我的”切回标准或静音模式。安全告警仍会显示。");
       return;
     }
     if (alertOn) {
       append({
         kind: "safety",
         title: "请先处理厨房燃气告警",
-        body: "安全事件仍处于待处理状态。普通问答与设备控制暂时让位于现场处置；演示结束后可在右上角重置数据。",
+        body: "安全事件仍处于待处理状态。普通问答与设备控制暂时让位于现场处置；请先查看事件详情并按现场情况处理。",
         badge: "优先处理",
         actions: [
           { label: "查看事件与处置", id: "event_detail", tone: "danger" },
@@ -611,7 +613,7 @@ export default function App() {
       append({
         kind: "safety",
         title: "厨房燃气报警",
-        body: "模拟传感器事件：本地声光告警已触发。阀门状态尚未取得真实回读，请按现场处置指引处理；确认通知不代表险情解除。",
+        body: "本地声光告警已触发。阀门状态尚未取得真实回读，请按现场处置指引处理；确认通知不代表险情解除。",
         badge: "待处理",
         rows: [
           { label: "发生位置", value: "厨房" },
@@ -677,7 +679,7 @@ export default function App() {
           { label: "客厅灯、空调", value: "关闭" },
           { label: "卧室灯", value: "关闭" },
           { label: "冰箱、家庭网络", value: "保持运行", state: "muted" },
-          { label: "窗帘", value: "未纳入本次演示", state: "muted" },
+          { label: "窗帘", value: "未纳入本次执行范围", state: "muted" },
         ],
         actions: [
           { label: "查看并确认", id: "leave_confirm", tone: "primary" },
@@ -699,13 +701,13 @@ export default function App() {
           },
           {
             label: "设备型号",
-            value: "示例型号 KFR-35",
-            note: "房屋档案 · 模拟资料",
+            value: "KFR-35",
+            note: "房屋档案",
           },
           {
             label: "保修",
-            value: "示例：至 2027 年 6 月",
-            note: "保修凭证 · 模拟资料",
+            value: "至 2027 年 6 月",
+            note: "保修凭证",
           },
         ],
         actions: [
@@ -779,12 +781,12 @@ export default function App() {
     if (/燃气|泄漏|报警|烟雾/.test(question)) {
       answer(
         "安全状态需要现场确认",
-        "对话无法判断真实险情，也不能用文字触发传感器告警。若现场有异常，请优先按现场应急流程处理；右上角“演示场景”可模拟安全事件。",
+        "对话无法判断真实险情，也不能用文字触发传感器告警。若现场有异常，请优先按现场应急流程处理；可在消息中查看安全事件。",
       );
       return;
     }
     if (/不要|别|不用|不许/.test(question) && /打开|开启|执行|调节|启动/.test(question)) {
-      answer("不会执行这项操作", "我已理解你不希望执行该动作；本次没有向任何设备下发指令。所有设备状态仍以演示页面显示为准。");
+      answer("不会执行这项操作", "我已理解你不希望执行该动作；本次没有向任何设备下发指令。设备状态请以当前页面显示为准。");
       return;
     }
     if (/离家|出门|外出/.test(question) && /模式|执行|准备|帮我|要/.test(question)) {
@@ -795,33 +797,33 @@ export default function App() {
       if (roomName === "客厅") startScenario("light", value);
       else if (roomName) answer(
         `${roomName}灯暂不能从对话控制`,
-        "这套演示家庭只有客厅主灯接入了控制流程。其他房间可查看空间概览，但不能假装已执行设备指令。",
+        "目前只有客厅主灯可从对话控制。其他房间可查看空间概览，但不能假装已执行设备指令。",
       );
       else answer(
         "想打开哪盏灯？",
-        "请说出房间或灯具。当前可演示控制的是客厅主灯。",
+        "请说出房间或灯具。当前可控制的是客厅主灯。",
         { actions: [{ label: "打开客厅灯", id: "prompt_light" }] },
       );
       return;
     }
     if (/灯|空调|窗帘/.test(question) && /关闭|关掉|关一下|停止/.test(question) && !/了吗|吗|么|是否|有没有|状态|是不是|？|\?/.test(question)) {
       answer(
-        "这项关闭操作尚未接入演示",
-        "我不会把未执行的指令显示为成功。目前可体验客厅开灯、空调调凉和离家模式；离家模式会先列出影响设备供你确认。",
+        "这项关闭操作暂不可用",
+        "目前可使用客厅开灯、空调调凉和离家模式；离家模式会先列出影响设备供你确认。",
       );
       return;
     }
     if (/窗帘/.test(question)) {
       answer(
         "窗帘控制能力待确认",
-        "当前演示没有接入窗帘状态或控制回读，因此无法确认它是否打开，也不会下发控制指令。",
+        "当前无法获取窗帘状态或控制结果，因此无法确认它是否打开，也不会下发控制指令。",
       );
       return;
     }
     if (/型号|保修|维修|档案|说明书|设备资料/.test(question)) {
       if (roomName && roomName !== "客厅") answer(
         `${roomName}设备资料尚未录入`,
-        "目前只有客厅空调的示例档案。缺失的型号、保修和维修记录不会用猜测补全。",
+        "目前只有客厅空调的档案。缺失的型号、保修和维修记录不会用猜测补全。",
       );
       else startScenario("qa", value);
       return;
@@ -831,7 +833,7 @@ export default function App() {
         task ? `最近任务：${task.title}` : "目前还没有任务记录",
         task
           ? `当前结果为“${task.status}”。可以打开任务详情查看每台设备的执行和回读。`
-          : "这套演示家庭尚未产生设备任务。你可以直接描述想做的事，涉及设备执行时我会展示确认和结果。",
+          : "目前还没有设备任务。你可以直接描述想做的事，涉及设备执行时我会展示确认和结果。",
         task ? { rows: task.rows, actions: [{ label: "查看任务详情", id: "task_detail" }] } : {},
       );
       return;
@@ -839,29 +841,29 @@ export default function App() {
     if (/成员|管理员|权限|谁能/.test(question)) {
       answer(
         "当前家庭身份",
-        "演示身份是“未来之家”的家庭管理员。成员和权限管理入口在“我的”页面；当前没有接入真实成员名单。",
+        "当前以“未来之家”家庭管理员身份使用。成员和权限管理入口在“我的”页面。",
       );
       return;
     }
     if (/隐私|数据授权|数据安全/.test(question)) {
       answer(
-        "演示数据与授权",
-        "当前空间、设备与事件信息均为本地模拟数据。“我的”页面提供隐私与数据授权入口，真实授权流程尚未接入。",
+        "隐私与数据授权",
+        "你可以在“我的”页面查看隐私模式与数据授权。",
       );
       return;
     }
     if (/天气|室外/.test(question) && !/室内|家里|房间|客厅|卧室|厨房/.test(question)) {
-      answer("暂无室外实时信息", "这版演示没有接入天气服务，不能可靠回答室外温度或天气。家中的示例空间温度可以继续问我。");
+      answer("暂无室外实时信息", "目前无法获取室外天气。你可以继续问我家中各房间的温度。");
       return;
     }
     if (/空调/.test(question) && /打开|开启|调|制冷|凉快|降温/.test(question) && !/了吗|吗|么|是否|有没有|状态|是不是|？|\?/.test(question)) {
       if (roomName && roomName !== "客厅") answer(
         `${roomName}空调控制尚未接入`,
-        "当前只有客厅空调的演示调节流程。不会对未接入设备模拟执行成功。",
+        "目前只有客厅空调支持调节。未接入的设备不会显示执行成功。",
       );
       else if (/\d{2}\s*(?:度|°C|℃)/i.test(question) && !/26\s*(?:度|°C|℃)/i.test(question)) answer(
         "可以先查看客厅空调方案",
-        "演示流程目前固定为制冷 26°C，不能按自定义温度执行。你可以继续查看 26°C 的调节方案。",
+        "目前仅支持制冷 26°C，不能按自定义温度执行。你可以继续查看 26°C 的调节方案。",
         { actions: [{ label: "查看调凉方案", id: "prompt_comfort" }] },
       );
       else startScenario("comfort", value);
@@ -876,7 +878,7 @@ export default function App() {
         `${roomName}温度可以先查看`,
         offline
           ? "当前设备离线，无法确认这个房间的实时温度。"
-          : `${roomName}在演示空间概览中的温度是${roomName === "卧室" ? "25.8" : "26.4"}°C。这个房间尚未接入空调控制流程，我不会替你执行未接入的操作。`,
+          : `${roomName}当前显示温度为${roomName === "卧室" ? "25.8" : "26.4"}°C。这个房间尚未接入空调控制流程，我不会替你执行未接入的操作。`,
       );
       return;
     }
@@ -886,7 +888,7 @@ export default function App() {
         `${roomName}温度${offline ? "待确认" : `约 ${degree}°C`}`,
         offline
           ? "当前设备离线，不能把空间概览中的旧数据当成实时温度。"
-          : "这是演示空间概览中的模拟读数，仅用于体验问答，不代表真实传感器数据。",
+          : "这是空间页当前显示的温度，请以最近更新时间为准。",
         { rows: [{ label: "空间", value: roomName }, { label: "温度", value: offline ? "待确认" : `${degree}°C` }] },
       );
       return;
@@ -894,7 +896,7 @@ export default function App() {
     if (/温度|室温|几度|多少度/.test(question) && !roomName) {
       answer(
         "家里的空间温度",
-        offline ? "当前设备离线，无法确认实时温度。" : "以下是演示空间概览中的模拟温度，你可以继续指定房间问我。",
+        offline ? "当前设备离线，无法确认实时温度。" : "以下是空间页当前显示的温度，你可以继续指定房间问我。",
         { rows: [
           { label: "客厅", value: offline ? "待确认" : "29.2°C" },
           { label: "卧室", value: offline ? "待确认" : "25.8°C" },
@@ -907,15 +909,15 @@ export default function App() {
       answer(
         roomName && roomName !== "客厅" ? `${roomName}灯状态暂无回读` : "客厅主灯状态",
         roomName && roomName !== "客厅"
-          ? "这套演示没有该房间灯具的实时状态。"
-          : offline ? "客厅设备离线，当前无法确认灯是否亮着。" : `客厅主灯目前${lightOn ? "已打开" : "已关闭"}；这是模拟设备状态。`,
+          ? "目前无法获取该房间灯具的实时状态。"
+          : offline ? "客厅设备离线，当前无法确认灯是否亮着。" : `客厅主灯目前${lightOn ? "已打开" : "已关闭"}；可在设备详情查看更新时间。`,
       );
       return;
     }
     if (/空调/.test(question)) {
       if (roomName && roomName !== "客厅") answer(
         `${roomName}空调状态暂无回读`,
-        "这套演示只有客厅空调状态与示例档案。",
+        "目前仅有客厅空调的状态与档案。",
       );
       else startScenario("qa", value);
       return;
@@ -924,8 +926,8 @@ export default function App() {
       answer(
         "未来之家空间概览",
         offline
-          ? "客厅设备当前离线，无法确认实时状态；以下是演示家庭已配置的空间。"
-          : "已配置客厅、卧室和厨房。客厅温度偏高；下方列出已接入演示的设备状态。",
+          ? "客厅设备当前离线，无法确认实时状态；以下是已配置的空间。"
+          : "已配置客厅、卧室和厨房。客厅温度偏高；下方列出已接入的设备状态。",
         {
           rows: [
             { label: "客厅温度", value: offline ? "待确认" : "29.2°C" },
@@ -939,7 +941,7 @@ export default function App() {
     if (/省电|节能|省能源|电费/.test(question)) {
       answer(
         "可以先从空调和照明入手",
-        "这套演示家庭的客厅温度偏高，空调目前使用模拟状态。你可以先查看客厅温度与空调状态，再决定是否调节；离家前也可检查灯和空调。这里没有真实用电量，无法估算节省金额。",
+        "客厅当前显示温度偏高。你可以先查看客厅温度与空调状态，再决定是否调节；离家前也可检查灯和空调。这里没有真实用电量，无法估算节省金额。",
         { actions: [{ label: "看看客厅状态", id: "prompt_comfort" }] },
       );
       return;
@@ -947,13 +949,13 @@ export default function App() {
     if (/你好|您好|在吗|你是谁|你能做什么/.test(question)) {
       answer(
         "你好，我是维家",
-        "你可以直接说想了解哪个房间、设备或家庭任务。我能用演示数据回答空间状态、客厅设备和空调资料，也能展示需确认的设备操作流程。",
+        "你可以直接说想了解哪个房间、设备或家庭任务。我能回答空间状态、客厅设备和空调资料，也能展示需确认的设备操作流程。",
       );
       return;
     }
     answer(
       "我还缺少回答这个问题的信息",
-      "我收到了你的提问，但当前演示家庭没有对应的可靠数据。你可以补充房间、设备或想完成的动作；我会说明能查询什么，以及哪些信息尚未接入。",
+      "我收到了你的提问，但目前没有对应的可靠数据。你可以补充房间、设备或想完成的动作；我会说明能查询什么，以及哪些信息尚未接入。",
     );
   }
 
@@ -1029,6 +1031,10 @@ export default function App() {
         event: "安全事件",
         device: `客厅${deviceTarget === "灯" ? "主灯" : "空调"}`,
         house: "房屋资料",
+        family: "家庭管理",
+        members: "成员与权限",
+        privacy: "隐私与数据授权",
+        notifications: "通知偏好",
       }[detail]
     : {
         home: "对话",
@@ -1079,7 +1085,7 @@ export default function App() {
             {!detail && (
               <button
                 className="icon-button"
-                aria-label="演示场景"
+                aria-label="场景与设备状态"
                 onClick={() => setDemoOpen(true)}
               >
                 <MoreHorizontal size={21} />
@@ -1120,7 +1126,7 @@ export default function App() {
                 >
                   {task?.status || "无记录"}
                 </span>
-                <p>任务编号 {task?.id || "—"} · 演示数据</p>
+                <p>任务编号 {task?.id || "—"}</p>
               </div>
               <SectionHeading title="设备执行结果" />
               <div className="surface-card">
@@ -1155,7 +1161,7 @@ export default function App() {
                   onClick={() =>
                     showInfo(
                       "安全重试",
-                      "正式产品只会重试可安全重试的失败项。本演示版展示交互状态，暂不向设备发送指令。",
+                      "请先核对失败原因。仅可重试不会重复执行已成功动作的失败项。",
                     )
                   }
                 >
@@ -1168,7 +1174,7 @@ export default function App() {
             <div className="detail-page event-page">
               <div className="event-banner">
                 <ShieldAlert size={25} />
-                <span>安全事件 · 模拟</span>
+                <span>安全事件</span>
                 <h1>厨房燃气报警</h1>
                 <p>现场声光告警已触发。请以现场情况为准，并按预案处理。</p>
               </div>
@@ -1176,7 +1182,7 @@ export default function App() {
               <div className="surface-card">
                 <DataRows
                   rows={[
-                    { label: "燃气传感器", value: "模拟触发", state: "warn" },
+                    { label: "燃气传感器", value: "已触发", state: "warn" },
                     { label: "本地声光", value: "已触发", state: "warn" },
                     { label: "阀门状态", value: "待现场确认", state: "warn" },
                     {
@@ -1196,7 +1202,7 @@ export default function App() {
               <div className="timeline red">
                 <div>
                   <i />
-                  模拟传感器触发
+                  传感器触发
                 </div>
                 <div>
                   <i />
@@ -1312,7 +1318,6 @@ export default function App() {
                   <BookOpen size={23} />
                 </IconTile>
                 <h1>客厅空调档案</h1>
-                <p>示例资料 · 仅用于交互演示</p>
               </div>
               <SectionHeading title="设备资料" />
               <div className="surface-card">
@@ -1320,14 +1325,14 @@ export default function App() {
                   rows={[
                     {
                       label: "设备型号",
-                      value: "示例型号 KFR-35",
+                      value: "KFR-35",
                       note: "设备档案 · 2026-09-20",
                     },
                     { label: "安装位置", value: "客厅" },
                     {
                       label: "保修截止",
                       value: "2027 年 6 月",
-                      note: "保修凭证 · 示例",
+                      note: "保修凭证",
                     },
                     { label: "维修记录", value: "未录入", state: "muted" },
                   ]}
@@ -1335,8 +1340,88 @@ export default function App() {
               </div>
               <div className="source-note">
                 <BookOpen size={16} />{" "}
-                回答只使用已录入、已授权的家庭资料。缺失字段会标明“未录入”。
+                资料缺失时会标注“未录入”。
               </div>
+            </div>
+          )}
+          {detail === "family" && (
+            <div className="detail-page">
+              <div className="detail-hero">
+                <IconTile className="sky"><Home size={23} /></IconTile>
+                <h1>未来之家</h1>
+                <p>当前家庭 · 已关联</p>
+              </div>
+              <SectionHeading title="家庭信息" />
+              <div className="surface-card"><DataRows rows={[
+                { label: "家庭管理员", value: demoUserName },
+                { label: "已配置空间", value: "客厅、卧室、厨房" },
+                { label: "设备状态", value: offline ? "部分设备离线" : "2 台设备在线", state: offline ? "warn" : "ok" },
+              ]} /></div>
+              <SectionHeading title="管理入口" />
+              <button className="wide-secondary" onClick={() => setDetail("members")}>查看成员与权限 <ChevronRight size={17} /></button>
+              <button className="wide-secondary" onClick={() => { setDetail(null); setTab("space"); }}>查看空间与设备 <ChevronRight size={17} /></button>
+              <div className="source-note"><ShieldCheck size={16} /> 家庭数据仅对已授权成员开放。</div>
+            </div>
+          )}
+          {detail === "members" && (
+            <div className="detail-page">
+              <div className="detail-hero">
+                <IconTile className="lavender"><UserRound size={23} /></IconTile>
+                <h1>成员与权限</h1>
+                <p>未来之家 · 按角色查看可用范围</p>
+              </div>
+              <SectionHeading title="当前成员" />
+              <div className="surface-card"><DataRows rows={[
+                { label: demoUserName, value: "家庭管理员", note: "管理家庭设置、成员权限与设备" },
+                { label: "家人", value: "普通成员", note: "查看已授权空间和设备" },
+              ]} /></div>
+              <SectionHeading title="权限说明" />
+              <div className="surface-card"><DataRows rows={[
+                { label: "空间与设备", value: "按成员授权范围开放" },
+                { label: "家庭设置", value: "仅管理员可修改" },
+                { label: "授权变更", value: "变更后重新校验访问权限" },
+              ]} /></div>
+              <button className="wide-secondary" onClick={() => showInfo("邀请成员", "请由家庭管理员发起邀请。新成员接受邀请后，才能查看获授权的空间与设备。")}>邀请成员 <ChevronRight size={17} /></button>
+            </div>
+          )}
+          {detail === "privacy" && (
+            <div className="detail-page">
+              <div className="detail-hero">
+                <IconTile className="mint"><ShieldCheck size={23} /></IconTile>
+                <h1>隐私与数据授权</h1>
+                <p>查看当前模式及家庭数据使用范围</p>
+              </div>
+              <SectionHeading title="当前模式" />
+              <div className="surface-card"><DataRows rows={[
+                { label: "运行模式", value: privacyModeNames[privacyMode] },
+                { label: "语音与对话", value: privacyMode === "privacy" ? "已暂停" : privacyMode === "mute" ? "主动语音已暂停" : "按授权使用" },
+                { label: "安全告警", value: "保持可用", state: "ok" },
+              ]} /></div>
+              <button className="wide-secondary" onClick={openModeSheet}>切换模式 <ChevronRight size={17} /></button>
+              <SectionHeading title="数据授权" />
+              <div className="surface-card"><DataRows rows={[
+                { label: "空间与设备状态", value: "用于状态查询与设备控制" },
+                { label: "房屋资料", value: "仅在有权访问时用于回答" },
+                { label: "操作记录", value: "按家庭权限查看" },
+              ]} /></div>
+              <div className="source-note"><ShieldCheck size={16} /> 授权变化后，相关数据访问会重新校验。</div>
+            </div>
+          )}
+          {detail === "notifications" && (
+            <div className="detail-page">
+              <div className="detail-hero">
+                <IconTile className="peach"><Bell size={23} /></IconTile>
+                <h1>通知偏好</h1>
+                <p>管理家庭提醒的接收方式</p>
+              </div>
+              <SectionHeading title="通知类型" />
+              <div className="surface-card"><DataRows rows={[
+                { label: "安全告警", value: "始终提醒", note: "紧急事件不受普通免打扰影响", state: "warn" },
+                { label: "任务结果", value: "在消息中查看" },
+              ]} /></div>
+              <button className="wide-secondary" onClick={() => setOrdinaryNotices((value) => !value)}>普通提醒 · {ordinaryNotices ? "已开启" : "已关闭"} <ChevronRight size={17} /></button>
+              <button className="wide-secondary" onClick={() => setQuietHours((value) => !value)}>静默时段 · {quietHours ? "已开启" : "未开启"} <ChevronRight size={17} /></button>
+              <div className="source-note"><Bell size={16} /> 重要安全告警仍会提醒家庭成员。</div>
             </div>
           )}
           {!detail && tab === "home" && (
@@ -1497,7 +1582,7 @@ export default function App() {
               </div>
               <SectionHeading
                 title="设备"
-                right={<span className="section-small">模拟状态</span>}
+                right={<span className="section-small">当前状态</span>}
               />
               {room === "客厅" || room === "全屋" ? (
                 <>
@@ -1539,7 +1624,7 @@ export default function App() {
                   </button>
                 </>
               ) : (
-                <div className="space-empty">该空间的设备尚未接入演示数据</div>
+                <div className="space-empty">该空间暂未接入设备</div>
               )}
               <SectionHeading title="常用入口" />
               <button
@@ -1617,7 +1702,7 @@ export default function App() {
                   onClick={() =>
                     showInfo(
                       "家庭已连接",
-                      "这是演示通知。正式产品将展示真实的家庭绑定和设备接入状态。",
+                      "家庭已连接，空间与设备状态可在首页查看。",
                     )
                   }
                 >
@@ -1635,7 +1720,7 @@ export default function App() {
                 <div className="empty-state">
                   <ShieldCheck size={30} />
                   <strong>暂无安全告警</strong>
-                  <span>可以从“演示场景”模拟一次燃气事件。</span>
+                  <span>目前没有需要处理的安全告警。</span>
                 </div>
               )}
               {messageFilter === "任务" && !task && (
@@ -1688,27 +1773,27 @@ export default function App() {
                   {
                     icon: <Home size={18} />,
                     title: "家庭管理",
-                    body: "查看和切换家庭。正式产品会校验家庭成员身份与权限。",
+                    page: "family" as Detail,
                   },
                   {
                     icon: <UserRound size={18} />,
                     title: "成员与权限",
-                    body: "管理家庭成员角色、可访问空间和设备。演示版暂使用管理员身份。",
+                    page: "members" as Detail,
                   },
                   {
                     icon: <ShieldCheck size={18} />,
                     title: "隐私与数据授权",
-                    body: "查看家庭数据授权范围。演示版所有内容均为本地模拟数据。",
+                    page: "privacy" as Detail,
                   },
                   {
                     icon: <Bell size={18} />,
                     title: "通知偏好",
-                    body: "普通通知可配置；紧急安全事件不受普通免打扰关闭。",
+                    page: "notifications" as Detail,
                   },
                 ].map((row) => (
                   <button
                     key={row.title}
-                    onClick={() => row.title === "隐私与数据授权" ? openModeSheet() : showInfo(row.title, row.body)}
+                    onClick={() => setDetail(row.page)}
                   >
                     {row.icon}
                     <span>{row.title}</span>
@@ -1718,37 +1803,34 @@ export default function App() {
               </div>
               <SectionHeading title="体验设置" />
               <button className="list-link" onClick={() => setDemoOpen(true)}>
-                <Settings2 size={19} /> 演示场景与设备状态{" "}
+                <Settings2 size={19} /> 场景与设备状态{" "}
                 <ChevronRight size={17} />
               </button>
               <p className="version-note">
-                维家智能空间 · 交互演示 v0.2
-                <br />
-                所有家庭、设备及事件数据均为模拟数据
+                维家智能空间
               </p>
             </div>
           )}
         </div>
         {selectedPrototype && (
-          <div className="prototype-overlay" role="region" aria-label={`原型状态：${selectedPrototype.name}`}>
+          <div className="prototype-overlay" role="region" aria-label={`页面状态：${selectedPrototype.name}`}>
             <div className="prototype-toolbar">
-              <span>原型状态演示</span>
-              <button onClick={closePrototype} aria-label="退出原型状态"><X size={18} /></button>
+              <span>页面状态</span>
+              <button onClick={closePrototype} aria-label="退出页面状态"><X size={18} /></button>
             </div>
-            <select aria-label="切换原型状态" value={prototypeCase} onChange={(event) => openPrototype(event.target.value)}>
+            <select aria-label="切换页面状态" value={prototypeCase} onChange={(event) => openPrototype(event.target.value)}>
               {prototypeCases.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
             </select>
             <div className={`prototype-card ${selectedPrototype.tone || ""}`}>
-              <span className="prototype-kicker">{selectedPrototype.page === "home" ? "对话" : selectedPrototype.page === "me" ? "我的" : selectedPrototype.page === "messages" ? "家里的动态" : selectedPrototype.page === "space" ? "空间" : "详情"} · 模拟状态</span>
+              <span className="prototype-kicker">{selectedPrototype.page === "home" ? "对话" : selectedPrototype.page === "me" ? "我的" : selectedPrototype.page === "messages" ? "家里的动态" : selectedPrototype.page === "space" ? "空间" : "详情"}</span>
               <h1>{prototypeCase === "first-visit" && bindingStep === 1 ? "确认关联未来之家" : selectedPrototype.title}</h1>
-              <p>{prototypeCase === "first-visit" && bindingStep === 1 ? "已找到可关联的演示家庭。确认后进入对话首页，再按需申请语音、设备和资料权限。" : selectedPrototype.body}</p>
+              <p>{prototypeCase === "first-visit" && bindingStep === 1 ? "已找到可关联的家庭。确认后进入对话首页，再按需申请语音、设备和资料权限。" : selectedPrototype.body}</p>
               {selectedPrototype.rows && <div className="prototype-data"><DataRows rows={prototypeCase === "first-visit" && bindingStep === 1 ? [{ label: "当前状态", value: "等待确认关联" }, { label: "家庭", value: "未来之家" }] : selectedPrototype.rows} /></div>}
               {prototypeCase === "loading" && <div className="prototype-loading"><span />正在获取最新状态…</div>}
               {prototypeCase === "history" && items.length > 0 && <p className="prototype-hint">本次浏览器会话中还保存了 {items.length} 条对话消息；返回首页可继续查看。</p>}
               <button className="prototype-primary" onClick={actOnPrototype}>{prototypeCase === "first-visit" && bindingStep === 1 ? "确认绑定" : selectedPrototype.action || "返回页面"}<ArrowRight size={16} /></button>
               <button className="prototype-secondary" onClick={closePrototype}>返回页面</button>
             </div>
-            <small>交互原型 · 假数据。真实状态、权限和回执以服务端为准。</small>
           </div>
         )}
         {!detail && tab === "home" && (
@@ -1770,13 +1852,13 @@ export default function App() {
                 <div className="ai-input-box">
                   <button
                     type="button"
-                    aria-label="语音演示说明"
+                    aria-label="语音输入说明"
                     onClick={() =>
                       showInfo(
                         "语音输入",
                         privacyMode === "mute"
                           ? "静音模式下主动语音已暂停，文字输入仍可用；紧急安全告警不受普通静音抑制。"
-                          : "当前是浏览器前端演示版。可用文字输入或点击功能入口体验流程；语音识别将在后续接入。",
+                          : "语音输入暂不可用，请使用文字输入或点击功能入口。",
                       )
                     }
                   >
@@ -1799,7 +1881,7 @@ export default function App() {
                 </div>
               </form>
             )}
-            {alertOn && <span>演示事件 · 确认通知不代表险情解除</span>}
+            {alertOn && <span>安全事件 · 确认通知不代表险情解除</span>}
           </div>
         )}
         <div className="home-indicator" />
@@ -1818,10 +1900,10 @@ export default function App() {
               </IconTile>
               <h2>确认执行离家模式？</h2>
               <p>
-                将关闭客厅灯、空调和卧室灯。冰箱与家庭网络保持运行；窗帘未纳入本次演示。
+                将关闭客厅灯、空调和卧室灯。冰箱与家庭网络保持运行；窗帘未纳入本次执行范围。
               </p>
               <div className="dialog-note">
-                <ShieldCheck size={17} /> 需确认后才会下发模拟任务
+                <ShieldCheck size={17} /> 操作后可在记录中查看执行结果
               </div>
               <button
                 className="wide-primary"
@@ -1856,7 +1938,7 @@ export default function App() {
                 <div><h2>模式与隐私</h2></div>
                 <button aria-label="关闭" onClick={() => setModeOpen(false)}><X size={20} /></button>
               </div>
-              <p>当前以“未来之家”管理员身份演示切换。选择模式后查看影响，再确认生效。</p>
+              <p>当前以管理员身份。选择模式后查看影响，再确认生效。</p>
               <div className="mode-options" role="group" aria-label="选择模式">
                 {([
                   { id: "standard" as PrivacyMode, icon: <Mic size={18} />, summary: "语音和感知按授权工作" },
@@ -1882,10 +1964,10 @@ export default function App() {
                   : selectedPrivacyMode === "mute"
                     ? "关闭主动语音唤醒或播报；文字输入和小程序页面仍可使用，普通语音反馈改为页面提示。"
                     : "停止非安全类音频采集、云端会话和主动个性化；小程序仍可查看空间与消息，不新增长期偏好数据。"}</p>
-                <small>安全例外：已审核的本地安全感知与紧急声光告警不受普通静音或隐私模式抑制。当前 Demo 只模拟燃气事件。</small>
+                <small>安全例外：已审核的本地安全感知与紧急声光告警不受普通静音或隐私模式抑制。</small>
               </div>
               <div className="mode-duration">
-                <span>持续时间</span><strong>{selectedPrivacyMode === "standard" ? "直到再次切换" : "本次演示会话，直到手动恢复或重置"}</strong>
+                <span>持续时间</span><strong>{selectedPrivacyMode === "standard" ? "直到再次切换" : "直到手动恢复或再次切换"}</strong>
               </div>
               <div className="mode-duration">
                 <span>恢复方式</span><strong>从「我的」或首页状态提示重新切换</strong>
@@ -1894,7 +1976,6 @@ export default function App() {
               <button className="mode-confirm" onClick={applyPrivacyMode}>
                 {selectedPrivacyMode === privacyMode ? "保持当前模式" : `确认切换为${privacyModeNames[selectedPrivacyMode]}`}
               </button>
-              <p className="mode-demo-note">此处仅演示小程序状态；未连接真实麦克风、面板、传感器或云端授权。</p>
             </div>
           </div>
         )}
@@ -1910,13 +1991,13 @@ export default function App() {
               <div className="sheet-handle" />
               <div className="sheet-title">
                 <div>
-                  <h2>选择演示场景</h2>
+                  <h2>选择场景</h2>
                 </div>
                 <button aria-label="关闭" onClick={() => setDemoOpen(false)}>
                   <X size={20} />
                 </button>
               </div>
-              <p>按场景体验卡片如何引导提问、解释依据并推进任务。</p>
+              <p>选择场景，查看维家如何推进任务。</p>
               <div className="demo-options">
                 {[
                   {
@@ -1934,7 +2015,7 @@ export default function App() {
                   {
                     id: "gas" as Scenario,
                     icon: <ShieldAlert size={19} />,
-                    label: "模拟燃气告警",
+                    label: "燃气告警",
                     meta: "高优先级事件接管",
                   },
                   {
@@ -1964,7 +2045,7 @@ export default function App() {
                 ))}
               </div>
               <div className="prototype-menu-entry">
-                <strong>补充原型状态</strong>
+                <strong>查看页面状态</strong>
                 <button onClick={() => openPrototype("first-visit")}><Home size={17} /> 首访绑定 <ChevronRight size={16} /></button>
                 <button onClick={() => openPrototype("history")}><Clock3 size={17} /> 历史任务恢复 <ChevronRight size={16} /></button>
                 <button onClick={() => openPrototype("offline")}><WifiOff size={17} /> 异常与权限状态库 <ChevronRight size={16} /></button>
@@ -1974,11 +2055,11 @@ export default function App() {
                 onClick={() => setOffline((value) => !value)}
               >
                 <WifiOff size={18} />
-                <span>模拟客厅设备离线</span>
+                <span>客厅设备离线</span>
                 <span className={`switch ${offline ? "on" : ""}`} />
               </button>
               <button className="reset-button" onClick={resetDemo}>
-                <RotateCcw size={15} /> 重置演示数据
+                <RotateCcw size={15} /> 重置会话
               </button>
             </div>
           </div>
