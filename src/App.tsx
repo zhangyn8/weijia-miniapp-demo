@@ -21,7 +21,6 @@ import {
   MoreHorizontal,
   Plus,
   RotateCcw,
-  Settings2,
   ShieldAlert,
   ShieldCheck,
   Sparkles,
@@ -1404,7 +1403,6 @@ export default function App() {
                 { label: "语音与对话", value: privacyMode === "privacy" ? "已暂停" : privacyMode === "mute" ? "主动语音已暂停" : "按授权使用" },
                 { label: "安全告警", value: "保持可用", state: "ok" },
               ]} /></div>
-              <button className="wide-secondary" onClick={openModeSheet}>切换模式 <ChevronRight size={17} /></button>
               <SectionHeading title="数据授权" />
               <div className="surface-card"><DataRows rows={[
                 { label: "空间与设备状态", value: "用于状态查询与设备控制" },
@@ -1753,16 +1751,6 @@ export default function App() {
                 </div>
                 <Home className="family-mark" size={18} aria-hidden="true" />
               </div>
-              <button className="mode-summary" onClick={openModeSheet}>
-                <span className="mode-summary-icon">
-                  {privacyMode === "standard" ? <Mic size={19} /> : privacyMode === "mute" ? <VolumeX size={19} /> : <MicOff size={19} />}
-                </span>
-                <span className="mode-summary-copy">
-                  <strong>当前模式 · {privacyModeNames[privacyMode]}</strong>
-                  <small>{privacyMode === "standard" ? "语音与感知按已授权能力工作" : privacyMode === "mute" ? "主动语音暂停，文字与页面仍可用" : "非安全收音与对话已暂停"}</small>
-                </span>
-                <span className="mode-summary-action">切换 <ChevronRight size={15} /></span>
-              </button>
               <SectionHeading title="家庭与消息" />
               <button className="ai-service-link" onClick={() => setTab("space")}>
                 <Home size={20} />
@@ -1808,11 +1796,6 @@ export default function App() {
                   </button>
                 ))}
               </div>
-              <SectionHeading title="体验设置" />
-              <button className="list-link" onClick={() => setDemoOpen(true)}>
-                <Settings2 size={19} /> 场景与设备状态{" "}
-                <ChevronRight size={17} />
-              </button>
               <p className="version-note">
                 维家智能空间
               </p>
