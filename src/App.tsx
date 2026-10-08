@@ -137,6 +137,13 @@ function greetingForHour(hour: number) {
   if (hour < 18) return "下午好";
   return "晚上好";
 }
+const livingRoomTemperatureC = 29.2;
+function homeSubtitleFor(hour: number, livingRoomTemperatureC: number | null) {
+  if (hour >= 21 || hour < 6) return "准备休息了吗？";
+  if (livingRoomTemperatureC === null) return "客厅状态暂时无法更新，稍后再看看？";
+  if (livingRoomTemperatureC >= 28) return "今天客厅有点热，要开空调吗？";
+  return "家里现在挺舒适，要看看别的房间吗？";
+}
 const prompts: {
   id: Scenario;
   title: string;
@@ -1430,7 +1437,7 @@ export default function App() {
                 <div className="ai-hero">
                   <div className="ai-welcome">
                     <h1>{greetingForHour(currentTime.getHours())}，{demoUserName}</h1>
-                    <p>了解空间、控制设备、安排生活</p>
+                    <p>{homeSubtitleFor(currentTime.getHours(), offline ? null : livingRoomTemperatureC)}</p>
                   </div>
                   <div className="ai-orb" aria-hidden="true">
                     <svg className="ai-orb-mark" viewBox="0 0 100 100" fill="none">
@@ -1460,7 +1467,7 @@ export default function App() {
                     <span className="ai-status-temp">
                       <Thermometer size={16} />
                       <strong>
-                        {offline ? "设备状态待确认" : "客厅 29.2°C"}
+                        {offline ? "设备状态待确认" : `客厅 ${livingRoomTemperatureC}°C`}
                       </strong>
                     </span>
                     <span className="ai-status-sub">
