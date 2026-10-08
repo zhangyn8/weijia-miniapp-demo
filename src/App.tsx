@@ -1652,7 +1652,7 @@ export default function App() {
               <SectionHeading title="我的维家" />
               <div className="family-card">
                 <div className="family-avatar">
-                  <img src="/me-avatar.jpg" alt="我的头像" />
+                  <img src="./me-avatar.jpg" alt="我的头像" />
                 </div>
                 <div className="family-info">
                   <small>我的账号</small>
