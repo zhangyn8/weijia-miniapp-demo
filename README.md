@@ -42,6 +42,10 @@ npm run build
 
 构建产物在 `dist/`，可作为静态文件放到公司服务器的站点目录。项目使用相对资源路径，不依赖本机开发服务，也无需后端。上线前需要由研发接入真实身份、家庭权限、设备状态、任务和事件接口，并把模拟数据与模拟回读替换掉。
 
+### GitHub Pages 演示链接
+
+仓库包含 `.github/workflows/deploy-pages.yml`。在 GitHub 仓库的 **Settings → Pages** 把发布来源设为 **GitHub Actions** 后，每次推送到 `main` 都会构建并发布 `dist/`。项目使用相对资源路径，可部署在仓库子路径下。GitHub Pages 仅用于假数据演示，网页链接可能被持有链接的人访问。
+
 ## 后续调整 UI
 
 页面和交互逻辑在 `src/App.tsx`。基础组件样式在 `src/styles.css`；首页视觉集中在 `src/visual-refresh.css`。维家 Logo 使用用户提供的 `public/brand-logo.png`。后续调整颜色、字号、间距和卡片，优先修改视觉方案文件，再逐个场景检查正常、离线、失败和告警状态。
