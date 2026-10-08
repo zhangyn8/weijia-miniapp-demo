@@ -24,17 +24,19 @@ import {
   ShieldAlert,
   ShieldCheck,
   Sparkles,
+  Sunrise,
   Thermometer,
   UserRound,
   VolumeX,
   WifiOff,
   Wind,
+  Moon,
   X,
 } from "lucide-react";
 
 type Tab = "home" | "space" | "messages" | "me";
 type Detail = "task" | "event" | "device" | "house" | "family" | "members" | "privacy" | "notifications" | null;
-type Scenario = "comfort" | "leave" | "home" | "gas" | "qa" | "light";
+type Scenario = "comfort" | "leave" | "home" | "wake" | "sleep" | "gas" | "qa" | "light";
 type PrivacyMode = "standard" | "mute" | "privacy";
 const privacyModeNames: Record<PrivacyMode, string> = {
   standard: "标准模式",
@@ -72,7 +74,7 @@ type ChatItem = {
 type Task = {
   id: string;
   title: string;
-  status: "待确认" | "执行中" | "成功" | "部分失败" | "失败";
+  status: "待确认" | "执行中" | "成功" | "部分完成" | "部分失败" | "失败";
   rows: Row[];
 };
 
@@ -346,6 +348,7 @@ export default function App() {
   const [offline, setOffline] = useState(false);
   const [lightOn, setLightOn] = useState(false);
   const [acOn, setAcOn] = useState(false);
+  const [acTargetTemp, setAcTargetTemp] = useState(26);
   const [alertOn, setAlertOn] = useState(false);
   const [alertAcknowledged, setAlertAcknowledged] = useState(false);
   const [task, setTask] = useState<Task | null>(() => {
@@ -480,7 +483,7 @@ export default function App() {
     );
   }
 
-  function runTask(type: "comfort" | "leave" | "home" | "light", sourceId?: number) {
+  function runTask(type: "comfort" | "leave" | "home" | "wake" | "sleep" | "light", sourceId?: number) {
     const currentRun = ++taskRunVersion.current;
     if (sourceId) resolveCard(sourceId);
     const title =
@@ -490,8 +493,12 @@ export default function App() {
           ? "离家模式"
           : type === "home"
             ? "回家模式"
+            : type === "wake"
+              ? "起床模式"
+              : type === "sleep"
+                ? "睡眠模式"
             : "打开客厅灯";
-    const taskId = `T-${type === "leave" ? "1028" : type === "home" ? "1029" : type === "light" ? "1027" : "1026"}`;
+    const taskId = `T-${type === "leave" ? "1028" : type === "home" ? "1029" : type === "wake" ? "1030" : type === "sleep" ? "1031" : type === "light" ? "1027" : "1026"}`;
     if (offline && type !== "leave") {
       setTask({
         id: taskId,
@@ -499,7 +506,7 @@ export default function App() {
         status: "失败",
         rows: [
           {
-            label: type === "light" ? "客厅主灯" : type === "home" ? "客厅灯与空调" : "客厅空调",
+            label: type === "light" ? "客厅主灯" : type === "home" || type === "sleep" ? "客厅灯与空调" : "客厅空调",
             value: "设备离线",
             state: "warn",
           },
@@ -526,6 +533,12 @@ export default function App() {
           ? [
               { label: "客厅灯", value: "等待回读" },
               { label: "客厅空调", value: "等待回读" },
+            ]
+        : type === "wake" || type === "sleep"
+          ? [
+              ...(type === "sleep" ? [{ label: "客厅灯", value: "等待回读" }] : []),
+              { label: "客厅空调", value: "等待回读" },
+              { label: type === "wake" ? "卧室主灯" : "卧室小夜灯", value: "未接入，跳过", state: "muted" as const },
             ]
         : [
             {
@@ -564,6 +577,12 @@ export default function App() {
                 { label: "客厅灯", value: "已打开", state: "ok" },
                 { label: "客厅空调", value: "制冷 · 26°C", state: "ok" },
               ]
+          : type === "wake" || type === "sleep"
+            ? [
+                ...(type === "sleep" ? [{ label: "客厅灯", value: "已关闭", state: "ok" as const }] : []),
+                { label: "客厅空调", value: type === "wake" ? "舒适温度 · 26°C" : "夜间温度 · 27°C", state: "ok" },
+                { label: type === "wake" ? "卧室主灯" : "卧室小夜灯", value: "未接入，已跳过", state: "muted" },
+              ]
           : [
               {
                 label: type === "light" ? "客厅主灯" : "客厅空调",
@@ -571,13 +590,22 @@ export default function App() {
                 state: "ok",
               },
             ];
-      const status = type === "leave" ? "部分失败" : "成功";
+      const status = type === "leave" ? "部分失败" : type === "wake" || type === "sleep" ? "部分完成" : "成功";
       setTask({ id: taskId, title, status, rows });
       if (type === "light") setLightOn(true);
-      if (type === "comfort") setAcOn(true);
+      if (type === "comfort") {
+        setAcOn(true);
+        setAcTargetTemp(26);
+      }
       if (type === "home") {
         setLightOn(true);
         setAcOn(true);
+        setAcTargetTemp(26);
+      }
+      if (type === "wake" || type === "sleep") {
+        setAcOn(true);
+        setAcTargetTemp(type === "wake" ? 26 : 27);
+        if (type === "sleep") setLightOn(false);
       }
       if (type === "leave" && !offline) {
         setLightOn(false);
@@ -589,13 +617,15 @@ export default function App() {
             ? {
                 ...item,
                 kind: "result",
-                title: type === "leave" ? "离家模式部分完成" : type === "light" ? "客厅灯已打开" : `${title}已完成`,
+                title: type === "leave" ? "离家模式部分完成" : type === "wake" || type === "sleep" ? `${title}已执行可用动作` : type === "light" ? "客厅灯已打开" : `${title}已完成`,
                 layout: type === "light" ? "compact-light-success" : undefined,
                 body:
                   type === "leave"
                     ? offline
                       ? "客厅设备离线未执行，卧室灯无响应。请查看分项结果，不会把本次任务显示为成功。"
                       : "卧室灯未响应，其余动作已有回读。请查看失败项，不会把本次任务显示为全部成功。"
+                    : type === "wake" || type === "sleep"
+                      ? "客厅设备动作已有回读；卧室灯尚未接入，已跳过。"
                     : "设备状态已更新，可在下方查看。",
                 badge: status,
                 rows,
@@ -723,6 +753,30 @@ export default function App() {
           { label: "取消", id: "cancel" },
         ],
       });
+    } else if (type === "wake" || type === "sleep") {
+      const waking = type === "wake";
+      append({
+        kind: "plan",
+        title: `准备执行${waking ? "起床" : "睡眠"}模式`,
+        body: waking
+          ? "将客厅空调调至舒适温度。卧室主灯尚未接入，本次跳过渐亮动作。"
+          : "关闭客厅灯，并将空调调至夜间温度。卧室小夜灯尚未接入，本次跳过。",
+        badge: "待确认",
+        rows: waking
+          ? [
+              { label: "客厅空调", value: "舒适温度 · 26°C" },
+              { label: "卧室主灯", value: "未接入，跳过", state: "muted" },
+            ]
+          : [
+              { label: "客厅灯", value: "关闭" },
+              { label: "客厅空调", value: "夜间温度 · 27°C" },
+              { label: "卧室小夜灯", value: "未接入，跳过", state: "muted" },
+            ],
+        actions: [
+          { label: "确认执行可用动作", id: waking ? "wake_exec" : "sleep_exec", tone: "primary" },
+          { label: "取消", id: "cancel" },
+        ],
+      });
     } else if (type === "qa") {
       append({
         kind: "answer",
@@ -760,6 +814,8 @@ export default function App() {
   function handleAction(action: string, itemId: number) {
     if (action === "comfort_exec") runTask("comfort", itemId);
     else if (action === "home_exec") runTask("home", itemId);
+    else if (action === "wake_exec") runTask("wake", itemId);
+    else if (action === "sleep_exec") runTask("sleep", itemId);
     else if (action === "leave_confirm") {
       resolveCard(itemId);
       setConfirmLeave(true);
@@ -1004,6 +1060,7 @@ export default function App() {
     setAlertOn(false);
     setAlertAcknowledged(false);
     setAcOn(false);
+    setAcTargetTemp(26);
     setLightOn(false);
     setOffline(false);
     setDetail(null);
@@ -1291,7 +1348,7 @@ export default function App() {
                           ? "当前已打开"
                           : "当前已关闭"
                         : acOn
-                          ? "制冷 · 26°C"
+                          ? `制冷 · ${acTargetTemp}°C`
                           : "当前已关闭"}
                   </p>
                 </div>
@@ -1323,7 +1380,7 @@ export default function App() {
                                 ? "运行中"
                                 : "已关闭",
                           },
-                          { label: "目标温度", value: acOn ? "26°C" : "—" },
+                          { label: "目标温度", value: acOn ? `${acTargetTemp}°C` : "—" },
                           {
                             label: "最后上报",
                             value: offline ? "10 分钟前" : "刚刚",
@@ -1536,12 +1593,28 @@ export default function App() {
                       <span className="ai-recommend-icon" aria-hidden="true"><Home size={30} /></span>
                       <ChevronRight size={16} aria-hidden="true" />
                     </button>
-                    <button className="ai-recommend-qa" onClick={() => startScenario("home", "回家模式")}>
+                    <button className="ai-recommend-home" onClick={() => startScenario("home", "回家模式")}>
                       <span className="ai-recommend-copy">
                         <strong>回家模式</strong>
                         <small>开启客厅灯与空调</small>
                       </span>
                       <span className="ai-recommend-icon" aria-hidden="true"><Home size={30} /></span>
+                      <ChevronRight size={16} aria-hidden="true" />
+                    </button>
+                    <button className="ai-recommend-wake" onClick={() => startScenario("wake", "起床模式")}>
+                      <span className="ai-recommend-copy">
+                        <strong>起床模式</strong>
+                        <small>开启早晨舒适温度</small>
+                      </span>
+                      <span className="ai-recommend-icon" aria-hidden="true"><Sunrise size={30} /></span>
+                      <ChevronRight size={16} aria-hidden="true" />
+                    </button>
+                    <button className="ai-recommend-sleep" onClick={() => startScenario("sleep", "睡眠模式")}>
+                      <span className="ai-recommend-copy">
+                        <strong>睡眠模式</strong>
+                        <small>关闭客厅灯并调温</small>
+                      </span>
+                      <span className="ai-recommend-icon" aria-hidden="true"><Moon size={30} /></span>
                       <ChevronRight size={16} aria-hidden="true" />
                     </button>
                   </div>
@@ -1656,7 +1729,7 @@ export default function App() {
                     <span>
                       <strong>客厅空调</strong>
                       <small>
-                        {offline ? "离线" : acOn ? "制冷 · 26°C" : "已关闭"}
+                        {offline ? "离线" : acOn ? `制冷 · ${acTargetTemp}°C` : "已关闭"}
                       </small>
                     </span>
                     <ChevronRight size={18} />
@@ -1666,15 +1739,16 @@ export default function App() {
                 <div className="space-empty">该空间暂未接入设备</div>
               )}
               <SectionHeading title="常用入口" />
-              <button
-                className="list-link"
-                onClick={() => startScenario("leave")}
-              >
-                <Home size={19} /> 离家模式 <ChevronRight size={17} />
-              </button>
-              <button className="list-link" onClick={() => setDetail("house")}>
-                <BookOpen size={19} /> 房屋资料 <ChevronRight size={17} />
-              </button>
+              {([
+                { id: "wake" as Scenario, label: "起床模式", icon: <Sunrise size={19} /> },
+                { id: "home" as Scenario, label: "回家模式", icon: <Home size={19} /> },
+                { id: "leave" as Scenario, label: "离家模式", icon: <Home size={19} /> },
+                { id: "sleep" as Scenario, label: "睡眠模式", icon: <Moon size={19} /> },
+              ]).map((mode) => (
+                <button className="list-link" key={mode.id} onClick={() => startScenario(mode.id, mode.label)}>
+                  {mode.icon} {mode.label} <ChevronRight size={17} />
+                </button>
+              ))}
             </div>
           )}
           {!detail && tab === "messages" && (

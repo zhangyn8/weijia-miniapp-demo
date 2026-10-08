@@ -2479,8 +2479,14 @@
 .ai-recommend-grid button.ai-recommend-leave {
   background: linear-gradient(135deg, #a9b9f5 0%, #7a92e8 52%, #6d83dc 100%);
 }
-.ai-recommend-grid button.ai-recommend-qa {
+.ai-recommend-grid button.ai-recommend-home {
   background: linear-gradient(135deg, #97d6f7 0%, #6dbcf2 50%, #63a6e8 100%);
+}
+.ai-recommend-grid button.ai-recommend-wake {
+  background: linear-gradient(135deg, #a7dbf4 0%, #78bfe9 52%, #75a8de 100%);
+}
+.ai-recommend-grid button.ai-recommend-sleep {
+  background: linear-gradient(135deg, #b7c7ef 0%, #8ea9e1 52%, #7d96d2 100%);
 }
 .ai-recommend-grid button::before {
   position: absolute;
