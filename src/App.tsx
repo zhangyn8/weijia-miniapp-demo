@@ -1092,13 +1092,15 @@ export default function App() {
           </div>
         </div>
         <header className="app-header ai-header">
-          <button
-            className="icon-button"
-            aria-label="返回"
-            onClick={handleBack}
-          >
-            <ArrowLeft size={21} />
-          </button>
+          {detail && (
+            <button
+              className="icon-button"
+              aria-label="返回"
+              onClick={handleBack}
+            >
+              <ArrowLeft size={21} />
+            </button>
+          )}
           {detail ? (
             <div className="ai-header-title">
               <strong>{headerTitle}</strong>
