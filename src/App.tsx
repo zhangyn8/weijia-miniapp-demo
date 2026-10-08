@@ -73,11 +73,63 @@ type ChatItem = {
 type Task = {
   id: string;
   title: string;
-  status: "执行中" | "成功" | "部分失败" | "失败";
+  status: "待确认" | "执行中" | "成功" | "部分失败" | "失败";
   rows: Row[];
 };
 
 const demoUserName = "小南";
+type PrototypePage = Tab | Exclude<Detail, null>;
+type PrototypeCase = {
+  id: string;
+  page: PrototypePage;
+  name: string;
+  title: string;
+  body: string;
+  rows?: Row[];
+  action?: string;
+  tone?: "warning" | "danger";
+};
+const prototypeCases: PrototypeCase[] = [
+  { id: "first-visit", page: "home", name: "首访 · 未绑定家庭", title: "先关联你的家", body: "关联家庭后，才能看到真实空间、设备和任务。绑定前不展示模拟家庭状态，也不提供控制操作。", rows: [{ label: "当前状态", value: "尚未绑定家庭" }, { label: "授权方式", value: "按需授权" }], action: "绑定家庭" },
+  { id: "no-history", page: "home", name: "首访 · 已绑定无历史", title: "你好，小南", body: "家庭已关联。这里会先展示当前空间摘要和少量示例问题；首次提问时再申请相关能力的授权。", rows: [{ label: "家庭", value: "未来之家" }, { label: "历史任务", value: "暂无" }], action: "进入对话首页" },
+  { id: "history", page: "home", name: "历史会话 · 待确认任务", title: "继续上次的任务", body: "离家模式已完成影响范围预览，等待你确认。恢复时沿用原会话和任务编号，不会重复下发已完成动作。", rows: [{ label: "原任务", value: "离家模式" }, { label: "任务编号", value: "T-1028" }, { label: "当前步骤", value: "等待确认" }], action: "继续任务" },
+  { id: "loading", page: "home", name: "通用 · 加载中", title: "正在更新家庭状态", body: "保留页面与当前家庭上下文。较长时间未返回时，说明正在等待哪个服务。", rows: [{ label: "正在读取", value: "空间与任务" }, { label: "当前结果", value: "尚未确认" }], action: "返回页面" },
+  { id: "offline", page: "space", name: "空间 · 设备离线", title: "客厅设备暂时离线", body: "手机网络正常，但客厅主灯和空调没有最新回报。页面保留最后一次记录，不允许以旧状态发起确定性控制。", rows: [{ label: "最后上报", value: "10 分钟前" }, { label: "当前状态", value: "无法确认" }], action: "查看设备", tone: "warning" },
+  { id: "phone-offline", page: "space", name: "空间 · 手机断网", title: "手机当前无法连接网络", body: "小程序无法刷新云端空间与任务状态。已缓存的摘要仅供参考；现场面板及设备本地能力是否可用需分别判断。", rows: [{ label: "手机网络", value: "已断开" }, { label: "页面数据", value: "上次缓存" }], action: "重新连接后刷新", tone: "warning" },
+  { id: "hub-offline", page: "space", name: "空间 · 主机离线", title: "家庭主机暂时离线", body: "手机网络正常，但主机未回报。依赖主机的远程控制与自动化暂停；不将所有设备都标成故障。", rows: [{ label: "手机网络", value: "正常" }, { label: "家庭主机", value: "离线" }], action: "查看连接说明", tone: "warning" },
+  { id: "stale", page: "space", name: "空间 · 数据过期", title: "环境数据已过期", body: "温度和 CO₂ 读数来自较早的上报，暂不能据此判断客厅是否舒适或自动建议控制。", rows: [{ label: "温度", value: "29.2°C · 历史值" }, { label: "采集时间", value: "20 分钟前" }], action: "重新获取", tone: "warning" },
+  { id: "space-empty", page: "space", name: "空间 · 空房间", title: "这个房间还没有设备", body: "已选择厨房，但尚未接入可显示的设备。可以返回全屋或前往家庭设置完成设备配置。", rows: [{ label: "空间", value: "厨房" }, { label: "设备", value: "0 台" }], action: "返回全屋" },
+  { id: "sensor-missing", page: "space", name: "空间 · 传感器缺失", title: "暂缺环境读数", body: "卧室尚未接入温度与空气质量传感器。不要使用其他房间的数据代替。", rows: [{ label: "温度", value: "暂无数据" }, { label: "CO₂", value: "暂无数据" }], action: "查看设备配置" },
+  { id: "message-empty", page: "messages", name: "消息 · 空列表", title: "暂时没有消息", body: "告警、任务结果和通知会出现在这里。你可以返回对话页发起一次演示任务。", action: "返回对话" },
+  { id: "message-unread", page: "messages", name: "消息 · 未读与待处理", title: "有一条待处理告警", body: "未读只表示尚未打开；确认收到也不代表险情解除。打开消息时应刷新事件最新状态。", rows: [{ label: "厨房燃气报警", value: "待处理" }, { label: "读取状态", value: "未读" }], action: "查看事件", tone: "danger" },
+  { id: "message-expired", page: "messages", name: "消息 · 历史链接失效", title: "这条消息已失效", body: "原消息的操作入口已过期。先获取当前事件或任务状态，再决定是否展示后续操作。", rows: [{ label: "原消息", value: "离家模式结果" }, { label: "当前状态", value: "需重新获取" }], action: "刷新当前状态", tone: "warning" },
+  { id: "permission", page: "messages", name: "消息 · 无权限", title: "无法查看这条消息", body: "你的家庭访问权限已变化。敏感摘要保持隐藏，如需继续查看请联系家庭管理员。", rows: [{ label: "访问对象", value: "已脱敏" }, { label: "处理方式", value: "联系管理员" }], action: "返回消息" },
+  { id: "member", page: "me", name: "我的 · 普通成员", title: "小南 · 普通成员", body: "可以查看被授权的空间和设备；邀请、移除成员及家庭级配置由管理员处理。", rows: [{ label: "家庭", value: "未来之家" }, { label: "可访问空间", value: "客厅、卧室" }, { label: "家庭管理", value: "仅查看" }], action: "查看权限说明" },
+  { id: "me-no-family", page: "me", name: "我的 · 无家庭", title: "尚未加入家庭", body: "当前账号没有关联家庭。空间、消息与设备详情暂不展示家庭数据。", action: "加入或创建家庭" },
+  { id: "task-failed", page: "task", name: "任务 · 失败", title: "设备操作失败", body: "客厅空调未收到可确认的设备回读，本次任务显示失败，不会标记为已完成。", rows: [{ label: "任务编号", value: "T-1026" }, { label: "客厅空调", value: "未响应" }], action: "查看失败原因", tone: "warning" },
+  { id: "task-accepted", page: "task", name: "任务 · 已受理", title: "任务已受理", body: "控制请求已进入执行队列，尚无设备回读。只有收到可靠结果后，才会更新为成功或失败。", rows: [{ label: "任务编号", value: "T-1026" }, { label: "当前阶段", value: "等待设备回读" }], action: "返回任务详情" },
+  { id: "task-queued", page: "task", name: "任务 · 待发送", title: "任务等待发送", body: "方案已确认，正在检查家庭在线状态与执行权限。尚未向设备下发指令，不能显示执行成功。", rows: [{ label: "任务编号", value: "T-1026" }, { label: "设备指令", value: "尚未发送" }], action: "返回任务详情" },
+  { id: "task-timeout", page: "task", name: "任务 · 超时", title: "仍在等待设备回读", body: "服务已受理指令，但超过等待时间仍没有可靠回读。暂不重发相同动作，先查询设备现状。", rows: [{ label: "任务编号", value: "T-1026" }, { label: "当前结论", value: "结果未知" }], action: "刷新状态", tone: "warning" },
+  { id: "task-cancelled", page: "task", name: "任务 · 已取消", title: "离家模式已取消", body: "用户在确认前取消。本次没有向设备下发指令，历史记录仍可查看。", rows: [{ label: "任务编号", value: "T-1028" }, { label: "设备指令", value: "未下发" }], action: "返回对话" },
+  { id: "event-recovered", page: "event", name: "事件 · 已恢复待确认", title: "燃气读数已恢复", body: "传感器恢复正常不代表现场处理已完成。仍需有权成员核对现场并完成关闭流程。", rows: [{ label: "本地声光", value: "已停止" }, { label: "阀门状态", value: "待现场确认" }, { label: "人工确认", value: "待完成" }], action: "查看处置时间线", tone: "warning" },
+  { id: "event-detecting", page: "event", name: "事件 · 检测中", title: "正在核对传感器读数", body: "检测结果尚未达到告警判定条件。页面展示正在核对的对象与时间，不提前宣告安全或触发远程解除操作。", rows: [{ label: "传感器", value: "厨房燃气" }, { label: "当前阶段", value: "检测中" }], action: "查看实时读数", tone: "warning" },
+  { id: "event-processing", page: "event", name: "事件 · 处理中", title: "安全事件正在处理", body: "本地安全动作与通知已开始执行，远程页面逐项显示回执。未确认现场安全前，不提供一键解除按钮。", rows: [{ label: "本地告警", value: "已触发" }, { label: "联系人通知", value: "发送中" }, { label: "现场确认", value: "待完成" }], action: "查看处置时间线", tone: "danger" },
+  { id: "event-closed", page: "event", name: "事件 · 已关闭", title: "事件已关闭", body: "有权成员已核对现场，并记录关闭原因。历史处置过程保持可追溯，旧消息不再出现可执行的处置按钮。", rows: [{ label: "现场核对", value: "已完成" }, { label: "关闭原因", value: "读数恢复且现场无异常" }], action: "查看事件记录" },
+  { id: "event-false-alarm", page: "event", name: "事件 · 误报", title: "事件已标记误报", body: "经现场核查确认误报，处理人和核查依据已留存。历史告警仍可查询，且不当作设备故障已修复。", rows: [{ label: "处理结果", value: "误报" }, { label: "核查依据", value: "现场检测记录" }], action: "查看核查记录" },
+  { id: "device-unsupported", page: "device", name: "设备 · 不支持控制", title: "当前设备暂不支持远程控制", body: "设备状态可查看，但能力目录未返回可用控制项。页面不展示无法履约的操作按钮。", rows: [{ label: "设备", value: "窗帘电机" }, { label: "在线状态", value: "已连接" }, { label: "远程控制", value: "待验证" }], action: "查看设备资料" },
+  { id: "device-fault", page: "device", name: "设备 · 故障", title: "设备状态异常", body: "客厅空调上报故障码，暂不提供继续控制。可查看最近回报与故障说明，并联系维护人员。", rows: [{ label: "设备", value: "客厅空调" }, { label: "故障", value: "需检修" }], action: "查看故障详情", tone: "warning" },
+  { id: "device-permission", page: "device", name: "设备 · 无控制权限", title: "你没有控制权限", body: "设备状态按授权范围可见，但当前成员不能发起控制。申请权限后需重新校验，不沿用旧页面授权。", rows: [{ label: "设备", value: "客厅空调" }, { label: "控制权限", value: "未授权" }], action: "查看权限说明" },
+  { id: "house-missing", page: "house", name: "资料 · 缺失", title: "尚未录入保修凭证", body: "已有型号和安装位置，但保修日期缺少可靠来源。回答中应标明缺口，不推测保修时间。", rows: [{ label: "型号", value: "示例型号 KFR-35" }, { label: "保修凭证", value: "未录入" }], action: "查看补录说明" },
+  { id: "house-conflict", page: "house", name: "资料 · 来源冲突", title: "资料需要核对", body: "设备铭牌与上传凭证的型号不一致。在有权人核对前，不将其中一项作为确定答案。", rows: [{ label: "设备铭牌", value: "KFR-35" }, { label: "上传凭证", value: "KFR-36" }], action: "查看来源", tone: "warning" },
+  { id: "house-unavailable", page: "house", name: "资料 · 来源不可用", title: "资料暂时无法获取", body: "设备档案服务未返回可靠结果。保留当前问题与已确认资料，恢复后继续查询，不编造型号或保修日期。", rows: [{ label: "资料来源", value: "暂时不可用" }, { label: "回答状态", value: "等待核验" }], action: "稍后重试", tone: "warning" },
+  { id: "house-permission", page: "house", name: "资料 · 无权限", title: "无法查看这份资料", body: "当前成员没有访问这份家庭凭证的权限。页面只显示可公开的设备摘要，敏感文件内容保持隐藏。", rows: [{ label: "凭证内容", value: "已隐藏" }, { label: "下一步", value: "联系家庭管理员" }], action: "返回资料" },
+  { id: "me-denied", page: "me", name: "我的 · 权限受限", title: "家庭访问权限已变更", body: "账号仍已登录，但当前家庭授权被收回。家庭空间和任务入口暂停显示；可联系管理员或切换家庭。", rows: [{ label: "家庭", value: "未来之家" }, { label: "访问状态", value: "受限" }], action: "查看家庭权限" },
+  { id: "member-pending", page: "me", name: "成员 · 待生效", title: "成员邀请等待接受", body: "邀请已发出，但被邀请人尚未接受。页面不能提前展示家庭设备和资料，邀请者可查看有效期。", rows: [{ label: "邀请状态", value: "待接受" }, { label: "访问权限", value: "尚未生效" }], action: "查看邀请记录" },
+  { id: "member-expired", page: "me", name: "成员 · 已过期", title: "成员授权已过期", body: "该成员无法继续查看家庭状态或控制设备。历史操作记录按家庭审计规则保留。", rows: [{ label: "授权状态", value: "已过期" }, { label: "设备控制", value: "不可用" }], action: "联系管理员" },
+  { id: "member-revoked", page: "me", name: "成员 · 已撤销", title: "成员权限已撤销", body: "撤销后当前家庭的消息、资料和设备入口同步失效；旧链接重新打开时仍需校验权限。", rows: [{ label: "授权状态", value: "已撤销" }, { label: "旧链接", value: "不可继续访问" }], action: "返回我的" },
+  { id: "member-rejected", page: "me", name: "成员 · 越权拒绝", title: "当前操作未获授权", body: "普通成员尝试修改家庭级设置。服务端拒绝后，页面显示受限原因和联系管理员路径，不将操作写成成功。", rows: [{ label: "操作", value: "修改家庭成员" }, { label: "处理结果", value: "已拒绝" }], action: "查看权限说明", tone: "warning" },
+  { id: "service-unavailable", page: "home", name: "通用 · 服务不可用", title: "服务暂时不可用", body: "当前请求尚未完成。保留原会话和已完成步骤，恢复后继续，不重复创建任务。", rows: [{ label: "设备本地能力", value: "仍可用" }, { label: "云端问答", value: "暂时中断" }], action: "稍后重试", tone: "warning" },
+];
 function greetingForHour(hour: number) {
   if (hour < 5) return "夜深了";
   if (hour < 11) return "早上好";
@@ -108,7 +160,7 @@ const prompts: {
 ];
 
 const uid = (() => {
-  let current = 0;
+  let current = Date.now() * 1000;
   return () => ++current;
 })();
 
@@ -274,17 +326,30 @@ function SectionHeading({
 }
 
 export default function App() {
-  const [tab, setTab] = useState<Tab>("home");
+  const initialPrototype = prototypeCases.find((entry) => entry.id === new URLSearchParams(window.location.search).get("prototype"));
+  const [tab, setTab] = useState<Tab>(initialPrototype && ["home", "space", "messages", "me"].includes(initialPrototype.page) ? initialPrototype.page as Tab : "home");
   const [currentTime, setCurrentTime] = useState(() => new Date());
-  const [detail, setDetail] = useState<Detail>(null);
-  const [items, setItems] = useState<ChatItem[]>([]);
+  const [detail, setDetail] = useState<Detail>(initialPrototype && ["task", "event", "device", "house"].includes(initialPrototype.page) ? initialPrototype.page as Detail : null);
+  const [items, setItems] = useState<ChatItem[]>(() => {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem("weijia-demo-items") || "[]");
+      return Array.isArray(saved) ? saved : [];
+    } catch { return []; }
+  });
   const [input, setInput] = useState("");
   const [offline, setOffline] = useState(false);
   const [lightOn, setLightOn] = useState(false);
   const [acOn, setAcOn] = useState(false);
   const [alertOn, setAlertOn] = useState(false);
   const [alertAcknowledged, setAlertAcknowledged] = useState(false);
-  const [task, setTask] = useState<Task | null>(null);
+  const [task, setTask] = useState<Task | null>(() => {
+    try { return JSON.parse(sessionStorage.getItem("weijia-demo-task") || "null"); }
+    catch { return null; }
+  });
+  const [prototypeCase, setPrototypeCase] = useState(() =>
+    new URLSearchParams(window.location.search).get("prototype") || "",
+  );
+  const [bindingStep, setBindingStep] = useState(0);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [demoOpen, setDemoOpen] = useState(false);
   const [modeOpen, setModeOpen] = useState(false);
@@ -314,6 +379,67 @@ export default function App() {
     sessionStorage.setItem("weijia-demo-privacy-mode", privacyMode);
     sessionStorage.setItem("weijia-demo-mode-history", JSON.stringify(modeHistory));
   }, [privacyMode, modeHistory]);
+
+  useEffect(() => {
+    sessionStorage.setItem("weijia-demo-items", JSON.stringify(items));
+    sessionStorage.setItem("weijia-demo-task", JSON.stringify(task));
+  }, [items, task]);
+
+  function openPrototype(id: string) {
+    const selected = prototypeCases.find((entry) => entry.id === id);
+    if (!selected) return;
+    if (["task", "event", "device", "house"].includes(selected.page)) {
+      setDetail(selected.page as Exclude<Detail, null>);
+    } else {
+      setDetail(null);
+      setTab(selected.page as Tab);
+    }
+    setPrototypeCase(id);
+    setBindingStep(0);
+    setDemoOpen(false);
+    const url = new URL(window.location.href);
+    url.searchParams.set("prototype", id);
+    window.history.replaceState(null, "", url);
+  }
+
+  function closePrototype() {
+    setPrototypeCase("");
+    setBindingStep(0);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("prototype");
+    window.history.replaceState(null, "", url);
+  }
+
+  function actOnPrototype() {
+    if (prototypeCase === "first-visit") {
+      if (bindingStep === 0) { setBindingStep(1); return; }
+      closePrototype();
+      setTab("home");
+      setDetail(null);
+      return;
+    }
+    if (prototypeCase === "history") {
+      setItems([
+        { id: uid(), kind: "user", body: "执行离家模式" },
+        { id: uid(), kind: "plan", title: "继续确认离家模式", body: "恢复上次的任务步骤。客厅灯、空调和卧室灯将关闭；冰箱与家庭网络保持运行。", badge: "待确认", rows: [{ label: "任务编号", value: "T-1028" }, { label: "当前步骤", value: "等待确认" }], actions: [{ label: "查看并确认", id: "leave_confirm", tone: "primary" }, { label: "取消", id: "cancel" }] },
+      ]);
+      setTask({ id: "T-1028", title: "离家模式", status: "待确认", rows: [{ label: "作用范围", value: "3 台设备" }] });
+      closePrototype();
+      setDetail(null);
+      setTab("home");
+      return;
+    }
+    if (prototypeCase === "message-unread" || prototypeCase === "event-recovered") {
+      closePrototype(); setDetail("event"); setAlertOn(true); return;
+    }
+    if (prototypeCase === "offline") {
+      closePrototype(); setDetail("device"); setOffline(true); return;
+    }
+    if (prototypeCase === "no-history") {
+      closePrototype(); setTab("home"); setDetail(null); return;
+    }
+    closePrototype();
+  }
 
   useEffect(() => {
     const timer = window.setInterval(() => setCurrentTime(new Date()), 60_000);
@@ -847,6 +973,7 @@ export default function App() {
     setPrivacyMode("standard");
     setSelectedPrivacyMode("standard");
     setModeHistory([]);
+    closePrototype();
   }
 
   function showInfo(title: string, body: string) {
@@ -895,6 +1022,7 @@ export default function App() {
     setInfo(null);
   }
 
+  const selectedPrototype = prototypeCases.find((entry) => entry.id === prototypeCase);
   const headerTitle = detail
     ? {
         task: "任务详情",
@@ -1594,13 +1722,35 @@ export default function App() {
                 <ChevronRight size={17} />
               </button>
               <p className="version-note">
-                维家智能空间 · 交互演示 v0.1
+                维家智能空间 · 交互演示 v0.2
                 <br />
                 所有家庭、设备及事件数据均为模拟数据
               </p>
             </div>
           )}
         </div>
+        {selectedPrototype && (
+          <div className="prototype-overlay" role="region" aria-label={`原型状态：${selectedPrototype.name}`}>
+            <div className="prototype-toolbar">
+              <span>原型状态演示</span>
+              <button onClick={closePrototype} aria-label="退出原型状态"><X size={18} /></button>
+            </div>
+            <select aria-label="切换原型状态" value={prototypeCase} onChange={(event) => openPrototype(event.target.value)}>
+              {prototypeCases.map((entry) => <option key={entry.id} value={entry.id}>{entry.name}</option>)}
+            </select>
+            <div className={`prototype-card ${selectedPrototype.tone || ""}`}>
+              <span className="prototype-kicker">{selectedPrototype.page === "home" ? "对话" : selectedPrototype.page === "me" ? "我的" : selectedPrototype.page === "messages" ? "家里的动态" : selectedPrototype.page === "space" ? "空间" : "详情"} · 模拟状态</span>
+              <h1>{prototypeCase === "first-visit" && bindingStep === 1 ? "确认关联未来之家" : selectedPrototype.title}</h1>
+              <p>{prototypeCase === "first-visit" && bindingStep === 1 ? "已找到可关联的演示家庭。确认后进入对话首页，再按需申请语音、设备和资料权限。" : selectedPrototype.body}</p>
+              {selectedPrototype.rows && <div className="prototype-data"><DataRows rows={prototypeCase === "first-visit" && bindingStep === 1 ? [{ label: "当前状态", value: "等待确认关联" }, { label: "家庭", value: "未来之家" }] : selectedPrototype.rows} /></div>}
+              {prototypeCase === "loading" && <div className="prototype-loading"><span />正在获取最新状态…</div>}
+              {prototypeCase === "history" && items.length > 0 && <p className="prototype-hint">本次浏览器会话中还保存了 {items.length} 条对话消息；返回首页可继续查看。</p>}
+              <button className="prototype-primary" onClick={actOnPrototype}>{prototypeCase === "first-visit" && bindingStep === 1 ? "确认绑定" : selectedPrototype.action || "返回页面"}<ArrowRight size={16} /></button>
+              <button className="prototype-secondary" onClick={closePrototype}>返回页面</button>
+            </div>
+            <small>交互原型 · 假数据。真实状态、权限和回执以服务端为准。</small>
+          </div>
+        )}
         {!detail && tab === "home" && (
           <div className="composer-wrap">
             {alertOn ? (
@@ -1812,6 +1962,12 @@ export default function App() {
                     <ChevronRight size={18} />
                   </button>
                 ))}
+              </div>
+              <div className="prototype-menu-entry">
+                <strong>补充原型状态</strong>
+                <button onClick={() => openPrototype("first-visit")}><Home size={17} /> 首访绑定 <ChevronRight size={16} /></button>
+                <button onClick={() => openPrototype("history")}><Clock3 size={17} /> 历史任务恢复 <ChevronRight size={16} /></button>
+                <button onClick={() => openPrototype("offline")}><WifiOff size={17} /> 异常与权限状态库 <ChevronRight size={16} /></button>
               </div>
               <button
                 className="switch-row"
