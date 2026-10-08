@@ -34,7 +34,7 @@ import {
 
 type Tab = "home" | "space" | "messages" | "me";
 type Detail = "task" | "event" | "device" | "house" | "family" | "members" | "privacy" | "notifications" | null;
-type Scenario = "comfort" | "leave" | "gas" | "qa" | "light";
+type Scenario = "comfort" | "leave" | "home" | "gas" | "qa" | "light";
 type PrivacyMode = "standard" | "mute" | "privacy";
 const privacyModeNames: Record<PrivacyMode, string> = {
   standard: "标准模式",
@@ -480,7 +480,7 @@ export default function App() {
     );
   }
 
-  function runTask(type: "comfort" | "leave" | "light", sourceId?: number) {
+  function runTask(type: "comfort" | "leave" | "home" | "light", sourceId?: number) {
     const currentRun = ++taskRunVersion.current;
     if (sourceId) resolveCard(sourceId);
     const title =
@@ -488,8 +488,10 @@ export default function App() {
         ? "客厅空调调节"
         : type === "leave"
           ? "离家模式"
-          : "打开客厅灯";
-    const taskId = `T-${type === "leave" ? "1028" : type === "light" ? "1027" : "1026"}`;
+          : type === "home"
+            ? "回家模式"
+            : "打开客厅灯";
+    const taskId = `T-${type === "leave" ? "1028" : type === "home" ? "1029" : type === "light" ? "1027" : "1026"}`;
     if (offline && type !== "leave") {
       setTask({
         id: taskId,
@@ -497,7 +499,7 @@ export default function App() {
         status: "失败",
         rows: [
           {
-            label: type === "light" ? "客厅主灯" : "客厅空调",
+            label: type === "light" ? "客厅主灯" : type === "home" ? "客厅灯与空调" : "客厅空调",
             value: "设备离线",
             state: "warn",
           },
@@ -506,7 +508,7 @@ export default function App() {
       append({
         kind: "result",
         title: "设备离线，未执行",
-        body: "这台设备目前无法连接。请检查设备或稍后重试；没有设备回读，不会显示操作成功。",
+        body: "设备目前无法连接。请检查设备或稍后重试；没有设备回读，不会显示操作成功。",
         badge: "失败",
         actions: [{ label: "查看任务详情", id: "task_detail" }],
       });
@@ -520,6 +522,11 @@ export default function App() {
             { label: "卧室灯", value: "等待回读" },
             { label: "冰箱 / 网络", value: "保持运行" },
           ]
+        : type === "home"
+          ? [
+              { label: "客厅灯", value: "等待回读" },
+              { label: "客厅空调", value: "等待回读" },
+            ]
         : [
             {
               label: type === "light" ? "客厅主灯" : "客厅空调",
@@ -552,6 +559,11 @@ export default function App() {
                 { label: "卧室灯", value: "无响应", state: "warn" },
                 { label: "冰箱 / 网络", value: "保持运行", state: "muted" },
               ]
+          : type === "home"
+            ? [
+                { label: "客厅灯", value: "已打开", state: "ok" },
+                { label: "客厅空调", value: "制冷 · 26°C", state: "ok" },
+              ]
           : [
               {
                 label: type === "light" ? "客厅主灯" : "客厅空调",
@@ -563,6 +575,10 @@ export default function App() {
       setTask({ id: taskId, title, status, rows });
       if (type === "light") setLightOn(true);
       if (type === "comfort") setAcOn(true);
+      if (type === "home") {
+        setLightOn(true);
+        setAcOn(true);
+      }
       if (type === "leave" && !offline) {
         setLightOn(false);
         setAcOn(false);
@@ -692,6 +708,21 @@ export default function App() {
           { label: "取消", id: "cancel" },
         ],
       });
+    } else if (type === "home") {
+      append({
+        kind: "plan",
+        title: "准备执行回家模式",
+        body: "回家后打开客厅灯，并将客厅空调设为制冷 26°C。确认后再执行。",
+        badge: "待确认",
+        rows: [
+          { label: "客厅灯", value: "打开" },
+          { label: "客厅空调", value: "制冷 · 26°C" },
+        ],
+        actions: [
+          { label: "确认执行", id: "home_exec", tone: "primary" },
+          { label: "取消", id: "cancel" },
+        ],
+      });
     } else if (type === "qa") {
       append({
         kind: "answer",
@@ -728,6 +759,7 @@ export default function App() {
 
   function handleAction(action: string, itemId: number) {
     if (action === "comfort_exec") runTask("comfort", itemId);
+    else if (action === "home_exec") runTask("home", itemId);
     else if (action === "leave_confirm") {
       resolveCard(itemId);
       setConfirmLeave(true);
@@ -1502,12 +1534,12 @@ export default function App() {
                       <span className="ai-recommend-icon" aria-hidden="true"><Home size={30} /></span>
                       <ChevronRight size={16} aria-hidden="true" />
                     </button>
-                    <button className="ai-recommend-qa" onClick={() => startScenario("qa")}>
+                    <button className="ai-recommend-qa" onClick={() => startScenario("home", "回家模式")}>
                       <span className="ai-recommend-copy">
-                        <strong>空调问答</strong>
-                        <small>查看状态与型号</small>
+                        <strong>回家模式</strong>
+                        <small>开启客厅灯与空调</small>
                       </span>
-                      <span className="ai-recommend-icon" aria-hidden="true"><Fan size={30} /></span>
+                      <span className="ai-recommend-icon" aria-hidden="true"><Home size={30} /></span>
                       <ChevronRight size={16} aria-hidden="true" />
                     </button>
                   </div>
@@ -1863,8 +1895,8 @@ export default function App() {
                   <button
                     className="ai-send"
                     type={input.trim() ? "submit" : "button"}
-                    aria-label={input.trim() ? "发送问题" : "更多功能"}
-                    onClick={input.trim() ? undefined : () => setDemoOpen(true)}
+                    aria-label={input.trim() ? "发送问题" : "添加功能（暂不可用）"}
+                    disabled={!input.trim()}
                   >
                     {input.trim() ? <ArrowUp size={17} /> : <Plus size={17} />}
                   </button>
