@@ -380,7 +380,7 @@ export default function App() {
   const [info, setInfo] = useState<{ title: string; body: string } | null>(
     null,
   );
-  const [room, setRoom] = useState("客厅");
+  const [room, setRoom] = useState("全屋");
   const [messageFilter, setMessageFilter] = useState("全部");
   const [deviceTarget, setDeviceTarget] = useState<"灯" | "空调">("空调");
   const streamRef = useRef<HTMLDivElement>(null);
